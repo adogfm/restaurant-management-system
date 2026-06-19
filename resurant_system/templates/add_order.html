@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}新建订单 - 餐厅管理系统{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">➕ 创建新订单</h2>
+
+<!-- 显示错误消息 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('add_order') }}" id="order-form">
+            <!-- 订单基本信息 -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">订单号 *</label>
+                        <input type="text" class="form-control" name="order_no"
+                               value="{{ order_no }}" readonly>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">选择桌台 *</label>
+                        <select class="form-select" name="table_no" required id="table-select">
+                            <option value="">请选择桌台</option>
+                            {% for table in tables %}
+                            <option value="{{ table.table_no }}">
+                                {{ table.table_no }} ({{ table.location_type }} - {{ table.capacity }}人)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">顾客电话 *</label>
+                        <input type="text" class="form-control" name="customer_phone"
+                               required placeholder="请输入顾客手机号" id="customer-phone">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 顾客信息显示（动态加载） -->
+            <div class="row mb-3 d-none" id="customer-info-row">
+                <div class="col-12">
+                    <div class="alert alert-warning py-2 mb-0">
+                        <div class="d-flex justify-content-between align-items-center" id="customer-info">
+                            <!-- 这里的内容会被JavaScript动态更新 -->
+                            <div>
+                                <span id="customer-name">新顾客</span>
+                                <span class="badge bg-secondary ms-2" id="customer-level">普通会员</span>
+                            </div>
+                            <div>
+                                <span>积分: <strong id="customer-points">0</strong></span>
+                                <span class="ms-3">折扣: <strong id="customer-discount">无</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 添加就餐人数 -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">就餐人数 *</label>
+                        <input type="number" class="form-control" name="customer_count"
+                               min="1" max="50" value="1" required>
+                        <div class="form-text">请输入就餐人数</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">订单备注（可选）</label>
+                        <textarea class="form-control" name="remarks" rows="1"
+                                  placeholder="如有特殊要求，请在此备注"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 菜品选择 -->
+            <h5 class="mb-3">选择菜品</h5>
+            <div class="row">
+                {% for category in ['川菜', '粤菜', '家常菜', '汤类', '主食', '汤羹' ,'素菜'] %}
+                {% set category_dishes = dishes|selectattr('category', 'equalto', category)|list %}
+                {% if category_dishes %}
+                <div class="col-md-12">
+                    <h6 class="mt-3 mb-2">{{ category }}</h6>
+                    <div class="row">
+                        {% for dish in category_dishes %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- 菜品图片（左侧） -->
+                                        <div class="col-3">
+                                            {% if dish.image_url %}
+                                                <img src="{{ dish.image_url }}"
+                                                     alt="{{ dish.dish_name }}"
+                                                     class="img-fluid rounded"
+                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                                     style="width: 80px; height: 80px;">
+                                                    <span class="text-muted small">无图</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- 菜品信息（右侧） -->
+                                        <div class="col-9">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div style="flex: 1;">
+                                                    <h6 class="mb-1">{{ dish.dish_name }}</h6>
+                                                    <p class="text-muted mb-1" style="font-size: 0.85em;">
+                                                        {{ dish.description or '暂无描述' }}
+                                                    </p>
+                                                    <div class="mt-2">
+                                                        <strong class="text-primary">¥{{ "%.2f"|format(dish.price) }}</strong>
+                                                        <small class="text-muted ms-2">编号: {{ dish.dish_no }}</small>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end" style="min-width: 150px;">
+                                                    <!-- 重要：确保dish_no正确传递 -->
+                                                    <input type="hidden" name="dish_{{ dish.dish_no }}"
+                                                           value="{{ dish.dish_no }}">
+                                                    <div class="input-group mb-2" style="width: 100px;">
+                                                        <input type="number" name="quantity_{{ dish.dish_no }}"
+                                                               class="form-control dish-quantity"
+                                                               min="0" max="20" value="0"
+                                                               data-dish-no="{{ dish.dish_no }}"
+                                                               data-dish-name="{{ dish.dish_name }}"
+                                                               data-price="{{ dish.price }}">
+                                                        <span class="input-group-text">份</span>
+                                                    </div>
+                                                    <input type="text" name="special_{{ dish.dish_no }}"
+                                                           class="form-control form-control-sm"
+                                                           placeholder="特殊要求" style="width: 150px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- 订单总计显示区域 -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="alert alert-info">
+                        <small>请至少选择一个菜品，然后点击提交订单</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>订单总计</h5>
+                            <!-- 折扣前原价 -->
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">原价:</span>
+                                <span id="original-amount" class="text-muted">¥0.00</span>
+                            </div>
+
+                            <!-- 折扣信息（动态显示） -->
+                            <div class="d-none" id="discount-info">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-success">会员折扣:</span>
+                                    <span class="text-success" id="discount-amount">-¥0.00</span>
+                                </div>
+                            </div>
+
+                            <!-- 实付金额 -->
+                            <h3 class="text-primary mb-3" id="total-amount">¥0.00</h3>
+
+                            <p class="text-muted small" id="selected-dishes-count">已选择 0 种菜品</p>
+                            <div id="selected-dishes-list" class="small"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5" id="submit-btn">提交订单</button>
+                <a href="{{ url_for('orders') }}" class="btn btn-secondary btn-lg px-5">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// 全局变量存储顾客信息
+let currentCustomer = {
+    points: 0,
+    discountRate: 1.0,
+    discountLevel: '普通会员',
+    name: '新顾客'
+};
+
+// 更新订单摘要的函数
+function updateOrderSummary() {
+    let total = 0;
+    let selectedCount = 0;
+    let selectedDishes = [];
+
+    // 获取所有数量输入框
+    const quantityInputs = document.querySelectorAll('.dish-quantity');
+
+    quantityInputs.forEach(input => {
+        const quantity = parseInt(input.value) || 0;
+        const price = parseFloat(input.getAttribute('data-price')) || 0;
+        const dishNo = input.getAttribute('data-dish-no');
+        const dishName = input.getAttribute('data-dish-name');
+
+        if (quantity > 0) {
+            selectedCount++;
+            const subtotal = quantity * price;
+            total += subtotal;
+
+            selectedDishes.push({
+                name: dishName || '未知菜品',
+                quantity: quantity,
+                subtotal: subtotal.toFixed(2)
+            });
+        }
+    });
+
+    // 计算折扣
+    const originalAmount = total;
+    const discountAmount = originalAmount * (1 - currentCustomer.discountRate);
+    const finalAmount = originalAmount - discountAmount;
+
+    // 更新显示
+    document.getElementById('original-amount').textContent = '¥' + originalAmount.toFixed(2);
+    document.getElementById('total-amount').textContent = '¥' + finalAmount.toFixed(2);
+    document.getElementById('selected-dishes-count').textContent = `已选择 ${selectedCount} 种菜品`;
+
+    // 更新折扣信息
+    const discountInfo = document.getElementById('discount-info');
+    if (currentCustomer.discountRate < 1.0 && originalAmount > 0) {
+        document.getElementById('discount-amount').textContent = '-¥' + discountAmount.toFixed(2);
+        discountInfo.classList.remove('d-none');
+    } else {
+        discountInfo.classList.add('d-none');
+    }
+
+    // 更新菜品列表
+    const dishListElement = document.getElementById('selected-dishes-list');
+    if (selectedDishes.length > 0) {
+        let html = '<div class="mt-2">';
+        selectedDishes.forEach(dish => {
+            html += `<div>${dish.name} × ${dish.quantity} = ¥${dish.subtotal}</div>`;
+        });
+        html += '</div>';
+        dishListElement.innerHTML = html;
+    } else {
+        dishListElement.innerHTML = '';
+    }
+
+    // 启用/禁用提交按钮
+    const submitBtn = document.getElementById('submit-btn');
+    if (selectedCount === 0) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('disabled');
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('disabled');
+    }
+}
+
+// 查询顾客折扣信息
+function checkCustomerDiscount(phone) {
+    if (!phone || phone.trim().length < 11) {
+        // 隐藏顾客信息
+        document.getElementById('customer-info-row').classList.add('d-none');
+        resetCustomerInfo();
+        updateOrderSummary();
+        return;
+    }
+
+    console.log(`正在查询顾客折扣: ${phone}`);
+
+    // 显示加载状态
+    document.getElementById('customer-info').innerHTML = '<div class="text-center"><small>查询顾客信息中...</small></div>';
+    document.getElementById('customer-info-row').classList.remove('d-none');
+
+    // 发送AJAX请求查询顾客积分
+    fetch(`/api/customer_discount/${phone}`)
+        .then(response => {
+            console.log(`API响应状态: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`网络响应错误: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`API返回数据:`, data);
+            if (data.success) {
+                updateCustomerInfo(data);
+            } else {
+                console.log('API返回success为false');
+                showNewCustomer();
+            }
+            updateOrderSummary();
+        })
+        .catch(error => {
+            console.log('查询顾客折扣失败:', error);
+            showNewCustomer();
+            updateOrderSummary();
+        });
+}
+
+// 更新顾客信息
+function updateCustomerInfo(data) {
+    console.log(`updateCustomerInfo 被调用，接收数据:`, data);
+
+    // 确保数据正确
+    currentCustomer.points = parseInt(data.points) || 0;
+    currentCustomer.discountRate = parseFloat(data.discount_rate) || 1.0;
+    currentCustomer.discountLevel = data.discount_level || '普通会员';
+
+    // 直接从API获取姓名
+    if (data.has_customer && data.name) {
+        currentCustomer.name = data.name;
+    } else {
+        currentCustomer.name = '新顾客';
+    }
+
+    console.log(`更新后的顾客信息:`, currentCustomer);
+
+    // 更新顾客信息显示
+    updateCustomerDisplay();
+}
+
+// 更新顾客信息显示
+function updateCustomerDisplay() {
+    const levelBadgeClass = getBadgeClass(currentCustomer.discountLevel);
+    const discountText = currentCustomer.discountRate < 1.0
+        ? `${(currentCustomer.discountRate * 10).toFixed(1)}折`
+        : '无';
+
+    const customerInfoHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span>${currentCustomer.name}</span>
+                <span class="badge ${levelBadgeClass} ms-2">${currentCustomer.discountLevel}</span>
+            </div>
+            <div>
+                <span>积分: <strong>${currentCustomer.points}</strong></span>
+                <span class="ms-3">折扣: <strong>${discountText}</strong></span>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('customer-info').innerHTML = customerInfoHTML;
+    document.getElementById('customer-info-row').classList.remove('d-none');
+}
+
+// 显示新顾客信息
+function showNewCustomer() {
+    console.log('showNewCustomer 被调用');
+
+    currentCustomer = {
+        points: 0,
+        discountRate: 1.0,
+        discountLevel: '普通会员',
+        name: '新顾客'
+    };
+
+    updateCustomerDisplay();
+}
+
+// 重置顾客信息
+function resetCustomerInfo() {
+    currentCustomer = {
+        points: 0,
+        discountRate: 1.0,
+        discountLevel: '普通会员',
+        name: '新顾客'
+    };
+}
+
+// 根据会员等级获取徽章样式
+function getBadgeClass(level) {
+    if (level.includes('钻石')) return 'bg-danger';
+    if (level.includes('白金')) return 'bg-warning';
+    if (level.includes('黄金')) return 'bg-success';
+    if (level.includes('白银')) return 'bg-primary';
+    return 'bg-secondary';
+}
+
+// 初始化事件监听
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM加载完成');
+
+    // 为所有数量输入框添加事件监听
+    const quantityInputs = document.querySelectorAll('.dish-quantity');
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', updateOrderSummary);
+        input.addEventListener('input', updateOrderSummary);
+    });
+
+    // 监听顾客电话输入
+    const phoneInput = document.getElementById('customer-phone');
+    let checkTimeout;
+    phoneInput.addEventListener('input', function() {
+        clearTimeout(checkTimeout);
+        const phone = this.value.trim();
+        console.log(`电话输入变化: ${phone}`);
+        checkTimeout = setTimeout(() => {
+            checkCustomerDiscount(phone);
+        }, 500); // 延迟500ms，避免频繁请求
+    });
+
+    // 表单提交验证
+    document.getElementById('order-form').addEventListener('submit', function(e) {
+        console.log('表单提交验证');
+
+        // 检查桌台是否选择
+        const tableSelect = document.getElementById('table-select');
+        if (!tableSelect.value) {
+            e.preventDefault();
+            alert('请选择桌台！');
+            return false;
+        }
+
+        // 检查顾客电话是否填写
+        const phoneInput = document.getElementById('customer-phone');
+        if (!phoneInput.value.trim()) {
+            e.preventDefault();
+            alert('请输入顾客电话！');
+            return false;
+        }
+
+        // 检查就餐人数
+        const customerCount = document.querySelector('input[name="customer_count"]');
+        if (!customerCount.value || parseInt(customerCount.value) < 1) {
+            e.preventDefault();
+            alert('请输入正确的就餐人数！');
+            return false;
+        }
+
+        // 检查是否有选择菜品
+        let hasSelectedDish = false;
+        const quantityInputs = document.querySelectorAll('.dish-quantity');
+
+        quantityInputs.forEach(input => {
+            if (parseInt(input.value) > 0) {
+                hasSelectedDish = true;
+            }
+        });
+
+        if (!hasSelectedDish) {
+            e.preventDefault();
+            alert('请至少选择一种菜品！');
+            return false;
+        }
+
+        return true;
+    });
+
+    // 初始更新摘要
+    updateOrderSummary();
+});
+</script>
+{% endblock %}

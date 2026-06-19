@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}订单详情 - 餐厅管理系统{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📋 订单详情</h2>
+
+<!-- 返回按钮 -->
+<div class="mb-4">
+    <a href="{{ url_for('orders') }}" class="btn btn-outline-secondary">
+        ← 返回订单列表
+    </a>
+</div>
+
+{% if not order %}
+<div class="alert alert-danger">
+    订单不存在！
+</div>
+{% else %}
+<div class="row">
+    <!-- 订单基本信息 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">订单信息</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">订单号：</th>
+                        <td><strong class="text-primary">{{ order.order_no }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>桌台号：</th>
+                        <td>{{ order.table_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>顾客电话：</th>
+                        <td>{{ order.customer_phone }}</td>
+                    </tr>
+                    <tr>
+                        <th>订单状态：</th>
+                        <td>
+                            {% if order.order_status == '进行中' %}
+                                <span class="badge bg-warning">{{ order.order_status }}</span>
+                            {% elif order.order_status == '已完成' %}
+                                <span class="badge bg-success">{{ order.order_status }}</span>
+                            {% elif order.order_status == '已取消' %}
+                                <span class="badge bg-danger">{{ order.order_status }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ order.order_status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>下单时间：</th>
+                        <td>
+                            {% if order.order_time %}
+                                {{ order.order_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                            {% else %}
+                                未知
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>订单金额：</th>
+                        <td><h4 class="text-primary mb-0">¥{{ "%.2f"|format(order.total_amount) }}</h4></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单操作 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">订单操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if order.order_status == '进行中' %}
+                    <a href="{{ url_for('complete_order', order_no=order.order_no) }}"
+                       class="btn btn-success btn-lg"
+                       onclick="return confirm('确定要完成这个订单吗？完成后将释放桌台。')">
+                        ✅ 完成订单
+                    </a>
+                    {% endif %}
+
+                    {% if order.order_status == '进行中' or order.order_status == '待支付' %}
+                    <a href="{{ url_for('delete_order', order_no=order.order_no) }}"
+                       class="btn btn-danger btn-lg"
+                       onclick="return confirm('确定要取消这个订单吗？此操作不可撤销。')">
+                        ❌ 取消订单
+                    </a>
+                    {% endif %}
+
+                    <a href="javascript:window.print()" class="btn btn-outline-secondary">
+                        🖨️ 打印订单
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 订单明细 -->
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">菜品明细</h5>
+    </div>
+    <div class="card-body">
+        {% if order_items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>菜品名称</th>
+                        <th>单价</th>
+                        <th>数量</th>
+                        <th>小计</th>
+                        <th>特殊要求</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ item.dish_name }}</td>
+                        <td>¥{{ "%.2f"|format(item.price) }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>¥{{ "%.2f"|format(item.price * item.quantity) }}</td>
+                        <td>
+                            {% if item.special_request %}
+                                <span class="text-muted">{{ item.special_request }}</span>
+                            {% else %}
+                                <span class="text-muted">无</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>总计：</strong></td>
+                        <td colspan="2">
+                            <h4 class="text-primary mb-0">¥{{ "%.2f"|format(order.total_amount) }}</h4>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            暂无菜品明细
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 订单历史记录（可选） -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">订单日志</h5>
+    </div>
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <span class="text-muted">
+                    {% if order.order_time %}
+                        {{ order.order_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                    {% else %}
+                        未知时间
+                    {% endif %}
+                </span>
+                <span class="ms-3">订单创建</span>
+            </li>
+            {% if order.order_status == '已完成' %}
+            <li class="list-group-item">
+                <span class="text-muted">{{ order.order_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                <span class="ms-3 text-success">订单完成</span>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+<style>
+@media print {
+    /* === 隐藏整个第一页 === */
+
+    /* 隐藏导航栏 */
+    nav.navbar,
+    .navbar,
+    .navbar-brand,
+    .navbar-nav,
+    .dropdown-menu {
+        display: none !important;
+    }
+
+    /* 隐藏侧边栏 */
+    .sidebar,
+    .nav-sidebar,
+    .sidebar-menu,
+    [class*="sidebar"],
+    [class*="menu"] {
+        display: none !important;
+    }
+
+    /* 隐藏用户信息区域 */
+    .user-info,
+    .user-dropdown,
+    .dropdown-toggle {
+        display: none !important;
+    }
+
+    /* 隐藏面包屑或标题区域 */
+    .mb-4:first-child,  /* 返回按钮区域 */
+    h2.mb-4:first-of-type /* 大标题 "订单详情" */
+    {
+        display: none !important;
+    }
+
+    /* === 强制从新页面开始 === */
+
+    /* 在主要内容前强制分页 */
+    .row:first-of-type {
+        page-break-before: always; /* 总是在这个元素前分页 */
+    }
+
+    /* 或者隐藏第一页的所有内容 */
+    body::before {
+        content: "";
+        display: block;
+        page-break-after: always; /* 在空内容后分页 */
+    }
+
+    /* === 调整打印布局 === */
+
+    body {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .container, .container-fluid {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    /* 隐藏其他不需要打印的元素 */
+    .btn,
+    .d-grid.gap-2, /* 操作按钮区域 */
+    .card:last-child /* 订单日志卡片 */
+    {
+        display: none !important;
+    }
+}
+</style>

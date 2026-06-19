@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}添加菜品 - 餐厅管理系统{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">➕ 添加新菜品</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('add_dish') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">菜品编号 *</label>
+                        <input type="text" class="form-control" name="dish_no" required
+                               placeholder="如: D001">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">菜品名称 *</label>
+                        <input type="text" class="form-control" name="dish_name" required
+                               placeholder="如: 宫保鸡丁">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">价格 (元) *</label>
+                        <input type="number" class="form-control" name="price" step="0.01"
+                               min="0" required placeholder="如: 58.00">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">成本价 (元) *</label>
+                        <input type="number" class="form-control" name="cost_price" step="0.01"
+                               min="0" required placeholder="如: 25.00">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">菜品描述</label>
+                        <textarea class="form-control" name="description" rows="3"
+                                  placeholder="简要描述菜品特点"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">状态 *</label>
+                        <select class="form-select" name="dish_status" required>
+                            <option value="上架" selected>上架</option>
+                            <option value="下架">下架</option>
+                            <option value="售罄">售罄</option>
+                            <option value="时令菜">时令菜</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">类别 *</label>
+                        <select class="form-select" name="category" required>
+                            <option value="川菜" selected>川菜</option>
+                            <option value="粤菜">粤菜</option>
+                            <option value="家常菜">家常菜</option>
+                            <option value="汤类">汤类</option>
+                            <option value="主食">主食</option>
+                            <option value="海鲜">海鲜</option>
+                            <option value="凉菜">凉菜</option>
+                            <option value="素菜">素菜</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">图片URL</label>
+                        <input type="text" class="form-control" name="image_url"
+                               placeholder="菜品图片链接 (可选)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">添加菜品</button>
+                <a href="{{ url_for('dishes') }}" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

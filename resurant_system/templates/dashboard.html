@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘 - 餐厅管理系统{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📊 餐厅经营仪表盘</h2>
+
+<!-- 今日统计卡片 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📅 今日经营概况</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted">今日订单</h6>
+                                <h3 class="text-primary">{{ today_stats.今日订单总数 or 0 }}</h3>
+                                <small class="text-muted">单</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted">今日营收</h6>
+                                <h3 class="text-success">¥{{ "%.2f"|format(today_stats.今日总营收 or 0) }}</h3>
+                                {% if additional_stats.营收增长率 %}
+                                <small class="{% if additional_stats.营收增长率.startswith('-') %}text-danger{% else %}text-success{% endif %}">
+                                    {{ additional_stats.营收增长率 }} (vs 昨日)
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted">平均金额</h6>
+                                <h3 class="text-info">¥{{ "%.2f"|format(today_stats.平均订单金额 or 0) }}</h3>
+                                <small class="text-muted">元/单</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted">今日顾客</h6>
+                                <h3 class="text-warning">{{ today_stats.今日顾客数 or 0 }}</h3>
+                                <small class="text-muted">位</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 历史统计和本月统计 -->
+<div class="row mb-4">
+    <!-- 本月统计 -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">📈 本月统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <h6 class="text-muted">本月订单</h6>
+                        <h4>{{ month_stats.本月订单总数 or 0 }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted">本月营收</h6>
+                        <h4 class="text-success">¥{{ "%.2f"|format(month_stats.本月总营收 or 0) }}</h4>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <h6 class="text-muted">本月顾客</h6>
+                        <h4>{{ month_stats.本月顾客数 or 0 }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted">日均营收</h6>
+                        <h4 class="text-primary">{{ additional_stats.日均营收 or '¥0.00' }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史总统计 -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">🏆 历史总览</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <h6 class="text-muted">总订单数</h6>
+                        <h4>{{ all_stats.总订单数 or 0 }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted">历史总营收</h6>
+                        <h4 class="text-success">¥{{ "%.2f"|format(all_stats.历史总营收 or 0) }}</h4>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <h6 class="text-muted">总顾客数</h6>
+                        <h4>{{ all_stats.总顾客数 or 0 }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted">平均金额</h6>
+                        <h4 class="text-info">¥{{ "%.2f"|format(all_stats.历史平均金额 or 0) }}</h4>
+                    </div>
+                </div>
+                {% if all_stats.最近订单时间 %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <small class="text-muted">
+                            最近订单: {{ all_stats.最近订单时间 }}
+                            {% if all_stats.最早订单时间 %}
+                            <br>最早订单: {{ all_stats.最早订单时间 }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 其他部分保持不变（桌台状态、热销菜品、进行中订单） -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">🪑 桌台状态</h5>
+            </div>
+            <div class="card-body">
+                {% if table_stats %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>区域</th>
+                                <th>总桌数</th>
+                                <th>空闲</th>
+                                <th>占用</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for table in table_stats %}
+                            <tr>
+                                <td>{{ table.区域 }}</td>
+                                <td>{{ table.总桌数 }}</td>
+                                <td><span class="badge bg-success">{{ table.空闲桌数 }}</span></td>
+                                <td><span class="badge bg-danger">{{ table.占用桌数 }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">暂无桌台数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">🔥 热销菜品</h5>
+            </div>
+            <div class="card-body">
+                {% if hot_dishes %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>菜品</th>
+                                <th>销售份数</th>
+                                <th>销售额</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dish in hot_dishes[:5] %}
+                            <tr>
+                                <td>{{ dish.菜品名称 }}</td>
+                                <td>{{ dish.销售份数 }}</td>
+                                <td>¥{{ "%.2f"|format(dish.销售额 or 0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">暂无销售数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">⏳ 进行中订单</h5>
+            </div>
+            <div class="card-body">
+                {% if pending_orders %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>订单号</th>
+                                <th>桌号</th>
+                                <th>等待</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in pending_orders[:5] %}
+                            <tr>
+                                <td><a href="{{ url_for('order_detail', order_no=order.订单号) }}">{{ order.订单号 }}</a></td>
+                                <td>{{ order.桌号 }}</td>
+                                <td>{{ order.已等待分钟 or 0 }}分钟</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if pending_orders|length > 5 %}
+                <p class="text-muted small">还有 {{ pending_orders|length - 5 }} 个订单...</p>
+                {% endif %}
+                {% else %}
+                <p class="text-success">🎉 当前没有进行中的订单！</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

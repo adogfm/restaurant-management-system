@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}编辑菜品 - 餐厅管理系统{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">✏️ 编辑菜品</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('edit_dish', dish_no=dish.dish_no) }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">菜品编号</label>
+                        <input type="text" class="form-control" value="{{ dish.dish_no }}" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">菜品名称 *</label>
+                        <input type="text" class="form-control" name="dish_name"
+                               value="{{ dish.dish_name }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">价格 (元) *</label>
+                        <input type="number" class="form-control" name="price" step="0.01"
+                               min="0" value="{{ dish.price }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">成本价 (元) *</label>
+                        <input type="number" class="form-control" name="cost_price" step="0.01"
+                               min="0" value="{{ dish.cost_price }}" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">菜品描述</label>
+                        <textarea class="form-control" name="description" rows="3">{{ dish.description or '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">状态 *</label>
+                        <select class="form-select" name="dish_status" required>
+                            <option value="上架" {% if dish.dish_status == '上架' %}selected{% endif %}>上架</option>
+                            <option value="下架" {% if dish.dish_status == '下架' %}selected{% endif %}>下架</option>
+                            <option value="售罄" {% if dish.dish_status == '售罄' %}selected{% endif %}>售罄</option>
+                            <option value="时令菜" {% if dish.dish_status == '时令菜' %}selected{% endif %}>时令菜</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">类别 *</label>
+                        <select class="form-select" name="category" required>
+                            <option value="川菜" {% if dish.category == '川菜' %}selected{% endif %}>川菜</option>
+                            <option value="粤菜" {% if dish.category == '粤菜' %}selected{% endif %}>粤菜</option>
+                            <option value="家常菜" {% if dish.category == '家常菜' %}selected{% endif %}>家常菜</option>
+                            <option value="汤类" {% if dish.category == '汤类' %}selected{% endif %}>汤类</option>
+                            <option value="主食" {% if dish.category == '主食' %}selected{% endif %}>主食</option>
+                            <option value="海鲜" {% if dish.category == '海鲜' %}selected{% endif %}>海鲜</option>
+                            <option value="凉菜" {% if dish.category == '凉菜' %}selected{% endif %}>凉菜</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">图片URL</label>
+                        <input type="text" class="form-control" name="image_url"
+                               value="{{ dish.image_url or '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">更新菜品</button>
+                <a href="{{ url_for('dishes') }}" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

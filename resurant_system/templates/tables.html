@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}桌台管理 - 餐厅管理系统{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">🪑 桌台管理</h2>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>桌号</th>
+                <th>区域</th>
+                <th>容量</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for table in tables %}
+            <tr>
+                <td>{{ table.table_no }}</td>
+                <td>{{ table.location_type }}</td>
+                <td>{{ table.capacity }}人</td>
+                <td>
+                    {% if table.status == '空闲' %}
+                    <span class="badge bg-success">空闲</span>
+                    {% elif table.status == '占用' %}
+                    <span class="badge bg-danger">占用</span>
+                    {% elif table.status == '预订' %}
+                    <span class="badge bg-warning">预订</span>
+                    {% elif table.status == '清洁中' %}
+                    <span class="badge bg-info">清洁中</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ table.status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        {% if table.status == '空闲' %}
+                        <button class="btn btn-success disabled">空闲</button>
+                        <button class="btn btn-warning"
+                                onclick="updateTableStatus('{{ table.table_no }}', '占用')">
+                            设为占用
+                        </button>
+                        {% else %}
+                        <button class="btn btn-danger disabled">占用</button>
+                        <button class="btn btn-success"
+                                onclick="updateTableStatus('{{ table.table_no }}', '空闲')">
+                            设为空闲
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">暂无桌台数据</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function updateTableStatus(tableNo, status) {
+    if (confirm(`确定要将桌台 ${tableNo} 设为${status}吗？`)) {
+        const formData = new FormData();
+        formData.append('status', status);
+
+        fetch(`/update_table_status/${tableNo}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('桌台状态更新成功！');
+                location.reload();
+            } else {
+                alert('更新失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('请求失败：' + error);
+        });
+    }
+}
+</script>
+{% endblock %}
