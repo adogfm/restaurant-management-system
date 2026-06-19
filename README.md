@@ -37,7 +37,7 @@
 - 外键关联保证数据完整性，有历史订单的菜品禁止删除
 
 
-## 项目截图
+## 项目部分截图
 
 ![登录页面](screenshots/login.png)
 ![首页仪表盘](screenshots/dashboard.png)
