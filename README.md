@@ -38,8 +38,8 @@
 
 
 ## 项目截图
-![Uploading image.png…]()
 
+![登录页面](screenshots/login.png)
 ![首页仪表盘](screenshots/dashboard.png)
 ![菜品管理](screenshots/dishes.png)
 ![订单管理](screenshots/orders.png)
